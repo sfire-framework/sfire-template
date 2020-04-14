@@ -1,0 +1,33 @@
+{
+    "name": "sfire-framework/sfire-template",
+    "description": "Template parser based on Vuejs",
+    "keywords": [
+        "framework",
+        "sFire",
+        "template",
+        "parser",
+        "vuejs",
+        "directives"
+    ],
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Kris Kuiper",
+            "email": "kris@sfire.io"
+        }
+    ],
+    "homepage": "https://sfire.io",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=7.4",
+        "sfire-framework/sfire-dom": ">=1.0.0",
+        "sfire-framework/sfire-datacontrol": ">=1.0.0",
+        "sfire-framework/sfire-filecontrol": ">=1.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "sFire\\Template\\": "./src/"
+        }
+    }
+}
