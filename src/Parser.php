@@ -17,7 +17,7 @@ use sFire\Dom\Elements\Text;
 use sFire\Dom\Parser as DomParser;
 use sFire\FileControl\File;
 use sFire\FileControl\Directory;
-use sFire\Template\Exception\RuntimeException;
+use sFire\Template\Exceptions\RuntimeException;
 
 
 /**
@@ -29,7 +29,7 @@ class Parser {
 
     /**
      * Contains the type of the content that needs to be parsed (html, xml)
-     * @var int|null
+     * @var null|int
      */
     private ?int $contentType = null;
 
@@ -293,22 +293,11 @@ class Parser {
 
 
     /**
-     * @param $data
-     * @param string $language
-     * @throws RuntimeException
+     * @param string $filePath The path to the file
+     * @param string $language The language for the translation data
      */
-    public function translation($data, string $language) {
-
-        if(true === is_string($data)) {
-
-            $file = new File($data);
-
-            if(false === $file -> exists()) {
-                throw new RuntimeException(sprintf('Template file "%s" does not exists', $this -> file));
-            }
-
-            $this -> translate -> loadTranslationFile($data, $language);
-        }
+    public function translation(string $filePath, string $language) {
+        $this -> translate -> loadTranslationFile($filePath, $language);
     }
 
 
@@ -333,7 +322,7 @@ class Parser {
         switch(strtolower($templateFile -> getExtension())) {
 
             case 'xml' : $this -> contentType = DomParser::CONTENT_TYPE_XML; break;
-            default : $this -> contentType = DomParser::CONTENT_TYPE_HTML;
+            default    : $this -> contentType = DomParser::CONTENT_TYPE_HTML;
         }
 
         if(false === $templateFile -> exists()) {
@@ -424,10 +413,10 @@ class Parser {
      * @param string $path
      * @param array|null $variables
      * @param int $plural
-     * @param string|null $language
+     * @param null|string $language
      * @return string
      */
-    private function translateAttribute(string $path, array $variables = null, int $plural = 0, string $language = null): string {
+    public function translateAttribute(string $path, array $variables = null, int $plural = 0, string $language = null): string {
         return htmlentities($this -> translate -> translateAttribute($path, $variables, $plural, $language), ENT_QUOTES);
     }
 
@@ -441,7 +430,7 @@ class Parser {
      * @param null|string $language
      * @return string
      */
-    private function translate(string $content, string $path, array $variables = null, int $plural = 0, string $language = null): string {
+    public function translate(string $content, string $path, array $variables = null, int $plural = 0, string $language = null): string {
         return $this -> translate -> translate($content, $path, $variables, $plural, $language);
     }
 
@@ -541,7 +530,7 @@ class Parser {
                         //Check if there should be a for loop
                         elseif($name === 's-for') {
 
-                            if(true === (bool) preg_match('#^\(*(?<item>\$[a-z0-9]+)(?:,[ ]*(?<index>(:?\$)*[a-z0-9]+)\))*[\s]+in[\s]+(?<items>.*)$#i', $value, $loop)) {
+                            if(true === (bool) preg_match('#^\(*(?<item>\$[a-z0-9]+)(?:,[ ]*(?<index>(:?\$)*[a-z0-9]+)\))*[\s]+in[\s]+(?<items>.*)$#i', (string) $value, $loop)) {
 
                                 //Build a for loop
                                 if(true === is_numeric($loop['items'])) {

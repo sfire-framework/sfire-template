@@ -1,6 +1,7 @@
 {
     "name": "sfire-framework/sfire-template",
     "description": "Template parser based on Vuejs",
+    "homepage": "https://sfire.io",
     "keywords": [
         "framework",
         "sFire",
@@ -21,9 +22,9 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.4",
-        "sfire-framework/sfire-dom": ">=1.0.0",
-        "sfire-framework/sfire-datacontrol": ">=1.0.0",
-        "sfire-framework/sfire-filecontrol": ">=1.0.0"
+        "sfire-framework/sfire-dom": "1.0.*",
+        "sfire-framework/sfire-filecontrol": "1.0.*",
+        "sfire-framework/sfire-localization": "1.0.*"
     },
     "autoload": {
         "psr-4": {

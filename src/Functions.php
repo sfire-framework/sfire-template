@@ -275,7 +275,7 @@ class Functions {
      */
     private function add(string $name, string $arguments, int $startPosition, int $endPosition): void {
 
-        if(true === (bool) preg_match('#^[_a-z][_a-z0-9]*#i', $name)) {
+        if(true === (bool) preg_match('#^[_a-z][_a-z0-9]*#i', (string) $name)) {
 
             if(false === function_exists($name) && false === in_array($name, self::VARIABLE_HANDLING_FUNCTIONS)) {
                 $this -> functions[] = ['name' => $name, 'arguments' => $arguments, 'start' => $startPosition, 'end' => $endPosition, 'length' => strlen($name) + strlen($arguments)];

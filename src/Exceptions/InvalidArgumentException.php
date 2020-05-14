@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace sFire\Template\Exception;
+namespace sFire\Template\Exceptions;
 
 use sFire\Template\Interfaces\ExceptionInterface;
 
