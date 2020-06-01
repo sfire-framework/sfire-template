@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace sFire\Template\Interfaces;
+namespace sFire\Template\Exceptions;
 
 
 /**

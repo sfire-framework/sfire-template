@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace sFire\Template\Exceptions;
 
-use sFire\Template\Interfaces\ExceptionInterface;
-
 
 /**
  * Class RuntimeException
