@@ -118,9 +118,18 @@ class Parser {
      * @return false|string
      */
     public function __toString() {
+        return $this -> render();
+    }
+
+
+    /**
+     * Returns the rendered template
+     * @return false|string
+     */
+    public function render() {
 
         $file =  $this -> convert();
-        return $this -> render($file -> getPath());
+        return $this -> obRender($file -> getPath());
     }
 
 
@@ -188,7 +197,7 @@ class Parser {
      * @param mixed $value [optional] The value of the variable
      * @return self
      */
-    public function assign($key, $value = null): self {
+    public function assign($key, &$value = null): self {
 
         if(true === is_array($key)) {
 
@@ -196,7 +205,7 @@ class Parser {
             return $this;
         }
 
-        $this -> variables[$key] = $value;
+        $this -> variables[$key] = &$value;
         return $this;
     }
 
@@ -746,7 +755,7 @@ class Parser {
      * @param string $file
      * @return false|string
      */
-    private function render(string $file) {
+    private function obRender(string $file) {
 
         ob_start();
         extract($this -> variables, EXTR_OVERWRITE);
