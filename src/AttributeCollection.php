@@ -13,6 +13,7 @@ namespace sFire\Template;
 
 use sFire\Dom\Tags\Attribute as NodeAttribute;
 use sFire\Dom\Elements\Node;
+use sFire\Template\Exceptions\BadFunctionCallException;
 
 
 /**
@@ -170,6 +171,11 @@ class AttributeCollection {
             if('s-bind' === $attribute -> getKey()) {
 
                 $type = $attribute -> getType();
+
+                if(null === $type) {
+                    throw new BadFunctionCallException('No type given for "s-bind" key');
+                }
+
                 $attr -> setName($type);
 
                 $value = (new Functions($value)) -> parse();

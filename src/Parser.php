@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace sFire\Template;
 
+use sFire\Dom\Elements\Comment;
 use sFire\Dom\Elements\DomElementAbstract;
 use sFire\Dom\Elements\Node;
 use sFire\Dom\Elements\Text;
@@ -70,6 +71,13 @@ class Parser {
 
 
     /**
+     * Contains all the middleware that needs to be executed before parsing
+     * @var array
+     */
+    private array $middleware = [];
+
+
+    /**
      * Contains the path to the cache directory
      * @var null|Directory
      */
@@ -98,6 +106,13 @@ class Parser {
 
 
     /**
+     * Contains if comments should be skipped or not
+     * @var bool
+     */
+    private bool $skipComments = true;
+
+
+    /**
      * Contains an instance of Translate
      * @var null|Translate
      */
@@ -119,17 +134,6 @@ class Parser {
      */
     public function __toString() {
         return $this -> render();
-    }
-
-
-    /**
-     * Returns the rendered template
-     * @return false|string
-     */
-    public function render() {
-
-        $file =  $this -> convert();
-        return $this -> obRender($file -> getPath());
     }
 
 
@@ -172,12 +176,42 @@ class Parser {
 
 
     /**
+     * Returns the rendered template
+     * @return false|string
+     */
+    public function render() {
+
+        $file = $this -> convert();
+        return $this -> obRender($file -> getPath());
+    }
+
+
+    /**
+     * Sets if all comments should be skipped or not
+     * @param bool $skip
+     * @return void
+     */
+    public function setSkipComments(bool $skip): void {
+        $this -> skipComments = $skip;
+    }
+
+
+    /**
      * Sets the path of the file to be parsed
      * @param string $filePath
      * @return void
      */
     public function setFile(string $filePath): void {
         $this -> file = $filePath;
+    }
+
+
+    /**
+     * Returns the path of the file to be parsed
+     * @return null|string
+     */
+    public function getFile(): ?string {
+        return $this -> file;
     }
 
 
@@ -192,17 +226,46 @@ class Parser {
 
 
     /**
-     * Assigns variables. Will merge recursive if needed.
+     * Adds new template middleware
+     * @param string ...$class
+     * @return self
+     */
+    public function middleware(string ...$class): self {
+
+        $this -> middleware = array_merge($class, $this -> middleware);
+        return $this;
+    }
+
+
+    /**
+     * Assigns variables to the template. Will merge recursive if needed.
      * @param float|int|string|array $key The title of the variable. If given an array, it wil be recursively merged into the existing variables.
      * @param mixed $value [optional] The value of the variable
      * @return self
      */
-    public function assign($key, &$value = null): self {
+    public function assign($key, $value = null): self {
 
         if(true === is_array($key)) {
 
             $this -> variables = array_replace_recursive($this -> variables, $key);
             return $this;
+        }
+
+        $this -> variables[$key] = $value;
+        return $this;
+    }
+
+
+    /**
+     * Assigns variables to the template by reference. Will merge recursive if needed.
+     * @param float|int|string|array $key The title of the variable. If given an array, it wil be recursively merged into the existing variables.
+     * @param mixed $value [optional] The value by reference of the variable
+     * @return self
+     */
+    public function reference($key, &$value = null): self {
+
+        if(true === is_array($key)) {
+            return $this -> assign($key);
         }
 
         $this -> variables[$key] = &$value;
@@ -229,6 +292,15 @@ class Parser {
 
 
     /**
+     * Returns the cache directory where the parsed HTML files are saved
+     * @return null|string
+     */
+    public function getCacheDir(): ?string {
+        return $this -> cacheDirectory;
+    }
+
+
+    /**
      * Sets the root of the template directory where all the template files are saved
      * @param string $path The path of the directory where all templates are saved
      * @return void
@@ -243,6 +315,15 @@ class Parser {
         }
 
         $this -> templateDirectory = $directory;
+    }
+
+
+    /**
+     * Returns the root of the template directory where all the template files are saved
+     * @return null|string
+     */
+    public function getTemplateDir(): ?string {
+        return $this -> templateDirectory;
     }
 
 
@@ -317,6 +398,11 @@ class Parser {
      */
     public function convert(): File {
 
+        //Execute middleware
+        foreach($this -> middleware as $middleware) {
+            $middleware = new $middleware($this);
+        }
+
         //Check if the cache directory has been set
         if(null === $this -> cacheDirectory) {
             throw new RuntimeException('Cache directory has not been set. Set the cache directory with the setCacheDir() method');
@@ -328,7 +414,7 @@ class Parser {
         $templateFile = new File($path . $file);
 
         //Determine content type
-        switch(strtolower($templateFile -> getExtension())) {
+        switch($templateFile -> getExtension()) {
 
             case 'xml' : $this -> contentType = DomParser::CONTENT_TYPE_XML; break;
             default    : $this -> contentType = DomParser::CONTENT_TYPE_HTML;
@@ -677,7 +763,12 @@ class Parser {
             }
 
             //Parses text nodes
-            if($node instanceof Text) {
+            if($node instanceof Text || $node instanceof Comment) {
+
+                //Skip HTML comments if needed
+                if($node instanceof Comment && true === $this -> skipComments) {
+                    continue;
+                }
 
                 if(null !== $this -> skip) {
 
@@ -773,24 +864,13 @@ class Parser {
     private function parseBrackets(string $content): array {
 
         $length           = strlen($content);
-        $escapeCharacters = ['\'' => 0, '"' => 0];
         $chunks           = [];
         $escapeCharacter  = null;
         $position         = null;
 
         for($i = 0; $i < $length; $i++) {
 
-            if(true === isset($escapeCharacters[$content[$i]])) {
-
-                if($content[$i] === $escapeCharacter) {
-                    $escapeCharacter = null;
-                }
-                elseif(null === $escapeCharacter) {
-                    $escapeCharacter = $content[$i];
-                }
-            }
-
-            if($content[$i] === '{' && null === $escapeCharacter) {
+            if($content[$i] === '{') {
 
                 if('!!' === substr($content, $i + 1, 2)) {
 
@@ -805,7 +885,7 @@ class Parser {
                     }
                 }
             }
-            elseif($content[$i] === '!' && null === $escapeCharacter) {
+            elseif($content[$i] === '!') {
 
                 if('!}' === substr($content, $i + 1, 2)) {
 
@@ -817,7 +897,7 @@ class Parser {
                     }
                 }
             }
-            elseif($content[$i] === '}' && null === $escapeCharacter) {
+            elseif($content[$i] === '}') {
 
                 if(($content[$i + 1] ?? null) === '}') {
 
