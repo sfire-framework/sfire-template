@@ -54,46 +54,46 @@ class Functions {
 
     /**
      * Contains all the PHP variable handling function that is not detected with the function_exists function
-     * @link https://www.php.net/manual/en/function.get-defined-vars.php
+     * @link https://www.php.net/manual/en/ref.var.php
      * @var array
      */
     private const VARIABLE_HANDLING_FUNCTIONS = [
 
         'boolval',
-        'debug_​zval_​dump',
+        'debug_zval_dump',
         'doubleval',
         'empty',
         'floatval',
-        'get_​defined_​vars',
-        'get_​resource_​type',
+        'get_defined_vars',
+        'get_resource_type',
         'gettype',
         'intval',
-        'is_​array',
-        'is_​bool',
-        'is_​callable',
-        'is_​countable',
-        'is_​double',
-        'is_​float',
-        'is_​int',
-        'is_​integer',
-        'is_​iterable',
-        'is_​long',
-        'is_​null',
-        'is_​numeric',
-        'is_​object',
-        'is_​real',
-        'is_​resource',
-        'is_​scalar',
-        'is_​string',
+        'is_array',
+        'is_bool',
+        'is_callable',
+        'is_countable',
+        'is_double',
+        'is_float',
+        'is_int',
+        'is_integer',
+        'is_iterable',
+        'is_long',
+        'is_null',
+        'is_numeric',
+        'is_object',
+        'is_real',
+        'is_resource',
+        'is_scalar',
+        'is_string',
         'isset',
-        'print_​r',
+        'print_r',
         'serialize',
         'settype',
         'strval',
         'unserialize',
         'unset',
-        'var_​dump',
-        'var_​export'
+        'var_dump',
+        'var_export'
     ];
 
 

@@ -217,8 +217,8 @@ class AttributeCollection {
 
                     switch($type) {
 
-                        case 'class'     : $this -> parseClass($attr); break;
-                        case 'style'     : $this -> parseStyle($attr); break;
+                        case 'class'     : $this -> parseAttribute($attr, ' '); break;
+                        case 'style'     : $this -> parseAttribute($attr, '; '); break;
                         case 's-partial' : $this -> parsePartial($attr); break;
 
                         default : $attr -> setParsed(sprintf(' %1$s=%2$s<?php echo @htmlentities((string) %3$s, ENT_QUOTES); ?>%2$s', $type, $enclosure, $value));
@@ -298,54 +298,21 @@ class AttributeCollection {
      * @param NodeAttribute $attribute
      * @return void
      */
-    private function parseClass(NodeAttribute $attribute): void {
+    private function parseAttribute(NodeAttribute $attribute, string $delimiter): void {
 
         $enclosure = $attribute -> getEnclosure();
         $value     = $attribute -> getValue();
         $value     = $value ? (new Functions($value)) -> parse() : $value;
 
-        if($class = $this -> node -> getAttribute('class')) {
+        if($class = $this -> node -> getAttribute($attribute -> getName())) {
 
-            $code = sprintf(' %s=%2$s<?php echo htmlentities(implode(" ", is_array(%3$s) ? array_filter(array_map(function($key, $value) {
-            if(is_string($key)) { return (bool) ($value) ? ($key) : null; } return $value; }, array_keys(array_merge(%3$s, explode(" ", "%4$s"))), 
-            array_merge(%3$s, explode(" ", "%4$s"))), function($value) { return $value !== null; }) : array_merge([%3$s], explode(" ", "%4$s"))), ENT_QUOTES); 
-            ?>%2$s', 'class', $enclosure, $value, $class -> getValue());
-
-            $attribute -> setParsed($code);
-            $this -> node -> removeAttribute('class');
-            unset($this -> attributes['class']);
-            $this -> skip['class'] = true;
+            $attribute -> setParsed(sprintf(' %1$s=%2$s<?php echo htmlentities($this -> toHtmlAttribute(%3$s, "%4$s", "%5$s"), ENT_QUOTES); ?>%2$s', $attribute -> getName(), $enclosure, $value, $class -> getValue(), $delimiter));
+            $this -> node -> removeAttribute($attribute -> getName());
+            unset($this -> attributes[$attribute -> getName()]);
+            $this -> skip[$attribute -> getName()] = true;
         }
         else {
-
-            $attribute -> setParsed(sprintf(' %s=%2$s<?php echo htmlentities(implode(" ", is_array(%3$s) ? 
-            array_filter(array_map(function($key, $value) { if(is_string($key)) { return (bool) ($value) ? ($key) : null; } return $value; },
-            array_keys(%3$s), %3$s), function($value) { return $value !== null; }) : [%3$s]), ENT_QUOTES); ?>%2$s', 'class', $enclosure, $value));
-        }
-    }
-
-
-    /**
-     * Parses the s-bind:style and style attribute of a given node
-     * @param NodeAttribute $attribute
-     * @return void
-     */
-    private function parseStyle(NodeAttribute $attribute): void {
-
-        $enclosure = $attribute -> getEnclosure();
-        $value     = $attribute -> getValue();
-        $value     = $value ? (new Functions($value)) -> parse() : $value;
-
-        if($style = $this -> node -> getAttribute('style')) {
-
-            $code = sprintf(' style=%1$s<?php echo @htmlentities(implode("; ", array_merge([%2$s], ["%3$s"])), ENT_QUOTES); ?>%1$s', $enclosure, $value, $style -> getValue());
-            $attribute -> setParsed($code);
-            $this -> node -> removeAttribute('style');
-            unset($this -> attributes['style']);
-            $this -> skip['style'] = true;
-        }
-        else {
-            $attribute -> setParsed(sprintf(' style=%1$s<?php echo @htmlentities(%2$s, ENT_QUOTES); ?>%1$s', $enclosure, $value));
+            $attribute -> setParsed(sprintf('<?php if($___attributes = $this -> toHtmlAttribute(%3$s, null, "%4$s")): ?> %1$s=%2$s<?php echo htmlentities($___attributes, ENT_QUOTES); ?>%2$s<?php endif; ?>', $attribute -> getName(), $enclosure, $value, $delimiter));
         }
     }
 

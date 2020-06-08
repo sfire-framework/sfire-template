@@ -92,13 +92,6 @@ class Parser {
 
 
     /**
-     * Contains the results of the executed custom functions
-     * @var array
-     */
-    private array $computedResults = [];
-
-
-    /**
      * Contains a node that needs to be skipped from parsing
      * @var null|Node
      */
@@ -138,51 +131,33 @@ class Parser {
 
 
     /**
-     * Magic method to catch all called functions from within the template
-     * Saves the result if cache is enabled for given function
-     * @param string $name The name of the function
-     * @param array $arguments An array with parameters
-     * @return mixed
-     * @throws RuntimeException
-     */
-    public function __call(string $name, array $arguments) {
-
-        $hash = md5(serialize($arguments));
-
-        if(false === isset($this -> functions[$name])) {
-            throw new RuntimeException(sprintf('Error in render: "%s" is not a function', $name));
-        }
-
-        if(false === isset($this -> computedResults[$name][$hash])) {
-            $results = $this -> functions[$name]['callable'](...$arguments);
-        }
-        else {
-            $results = $this -> computedResults[$name][$hash];
-        }
-
-        if($this -> functions[$name]['cache'] > 0) {
-
-            $this -> computedResults[$name][$hash] ??= [];
-
-            if(count($this -> computedResults[$name]) > $this -> functions[$name]['cache']) {
-                array_shift($this -> computedResults[$name]);
-            }
-
-            $this -> computedResults[$name][$hash] = $results;
-        }
-
-        return $results;
-    }
-
-
-    /**
      * Returns the rendered template
      * @return false|string
      */
     public function render() {
 
         $file = $this -> convert();
-        return $this -> obRender($file -> getPath());
+        $output = new Output($this, $this -> translate);
+
+        return $output -> render($file -> getPath());
+    }
+
+
+    /**
+     * Returns all functions and methods
+     * @return array
+     */
+    public function getFunctions(): array {
+        return $this -> functions;
+    }
+
+
+    /**
+     * Returns all template variables
+     * @return array
+     */
+    public function getVariables(): array {
+        return $this -> variables;
     }
 
 
@@ -466,7 +441,7 @@ class Parser {
      * @param bool $render Set to true if the render should be executed
      * @return string|self
      */
-    private function partial(string $filePath, bool $render = false) {
+    public function partial(string $filePath, bool $render = false) {
 
         $parser = new self($this -> translate);
         $parser -> setCacheDir($this -> cacheDirectory -> getPath());
@@ -838,21 +813,6 @@ class Parser {
         }
 
         return $output;
-    }
-
-
-    /**
-     * Renders the content
-     * @param string $file
-     * @return false|string
-     */
-    private function obRender(string $file) {
-
-        ob_start();
-        extract($this -> variables, EXTR_OVERWRITE);
-        include($file);
-
-        return ob_get_clean();
     }
 
 
