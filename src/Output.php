@@ -82,25 +82,29 @@ class Output {
             throw new RuntimeException(sprintf('Error in render: "%s" is not a function', $name));
         }
 
-        if(false === isset($this -> computedResults[$name][$hash])) {
-            $results = $functions[$name]['callable'](...$arguments);
-        }
-        else {
-            $results = $this -> computedResults[$name][$hash];
-        }
-
         if($functions[$name]['cache'] > 0) {
 
-            $this -> computedResults[$name][$hash] ??= [];
+            $this -> computedResults[$name][$hash] ??= ['results' => null, 'amount' => 0];
+            $amount = $this -> computedResults[$name][$hash]['amount'];
 
-            if(count($this -> computedResults[$name]) > $functions[$name]['cache']) {
-                array_shift($this -> computedResults[$name]);
+            if(0 === $amount) {
+
+                $this -> computedResults[$name][$hash]['results'] = $functions[$name]['callable'](...$arguments);
+                $this -> computedResults[$name][$hash]['amount']++;
+            }
+            elseif($amount < $functions[$name]['cache']) {
+                $this -> computedResults[$name][$hash]['amount']++;
+            }
+            else {
+
+                $this -> computedResults[$name][$hash]['results'] = $functions[$name]['callable'](...$arguments);
+                $this -> computedResults[$name][$hash]['amount'] = 1;
             }
 
-            $this -> computedResults[$name][$hash] = $results;
+            return $this -> computedResults[$name][$hash]['results'];
         }
 
-        return $results;
+        return $functions[$name]['callable'](...$arguments);
     }
 
 

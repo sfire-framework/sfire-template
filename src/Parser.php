@@ -50,13 +50,6 @@ class Parser {
 
 
     /**
-     * Contains the amount of maximum cached results that may be stored while calling a template method or function with arguments
-     * @var int
-     */
-    private int $amountCacheResults = 5;
-
-
-    /**
      * Contains all the assigned functions
      * @var array
      */
@@ -187,16 +180,6 @@ class Parser {
      */
     public function getFile(): ?string {
         return $this -> file;
-    }
-
-
-    /**
-     * Sets the amount of maximum cached results that may be stored while calling a template method or function with arguments
-     * @param int $amountCacheResults
-     * @return void
-     */
-    public function setAmountCacheResults(int $amountCacheResults): void {
-        $this -> amountCacheResults = $amountCacheResults;
     }
 
 
@@ -413,29 +396,6 @@ class Parser {
 
 
     /**
-     * Parses the template
-     * @param string $content
-     * @return string
-     */
-    private function parse(string $content): string {
-
-        $document = new DomParser($this -> contentType);
-        $nodes    = $document -> parse($content);
-
-        return implode('', $this -> output($nodes));
-    }
-
-
-    /**
-     * Set a node that needs to be skipped from parsing
-     * @param Node $skip
-     */
-    private function setSkip(Node $skip) {
-        $this -> skip = $skip;
-    }
-
-
-    /**
      * Include a partial template file
      * @param string $filePath The path to the template file
      * @param bool $render Set to true if the render should be executed
@@ -448,7 +408,6 @@ class Parser {
         $parser -> setTemplateDir($this -> templateDirectory -> getPath());
         $parser -> setFile($filePath);
         $parser -> enableCache($parser -> isCachedEnabled());
-        $parser -> setAmountCacheResults($this -> amountCacheResults);
 
         if(null !== $this -> skip) {
             $parser -> setSkip($this -> skip);
@@ -502,6 +461,29 @@ class Parser {
      */
     public function translate(string $content, string $path, array $variables = null, int $plural = 0, string $language = null): string {
         return $this -> translate -> translate($content, $path, $variables, $plural, $language);
+    }
+
+
+    /**
+     * Parses the template
+     * @param string $content
+     * @return string
+     */
+    private function parse(string $content): string {
+
+        $document = new DomParser($this -> contentType);
+        $nodes    = $document -> parse($content);
+
+        return implode('', $this -> output($nodes));
+    }
+
+
+    /**
+     * Set a node that needs to be skipped from parsing
+     * @param Node $skip
+     */
+    private function setSkip(Node $skip) {
+        $this -> skip = $skip;
     }
 
 
