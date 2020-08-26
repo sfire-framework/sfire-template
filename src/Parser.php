@@ -16,6 +16,7 @@ use sFire\Dom\Elements\DomElementAbstract;
 use sFire\Dom\Elements\Node;
 use sFire\Dom\Elements\Text;
 use sFire\Dom\Parser as DomParser;
+use sFire\Dom\Tags\Tag;
 use sFire\FileControl\File;
 use sFire\FileControl\Directory;
 use sFire\Template\Exceptions\RuntimeException;
@@ -106,11 +107,27 @@ class Parser {
 
 
     /**
+     * Contains all the found sections
+     * @var array
+     */
+    private array $sections = [];
+
+
+    /**
+     * Contains all tags that should not be vissible in the rendered output
+     * @var array
+     */
+    private array $hiddenTags = ['s-tag' => 1, 's-section' => 1, 's-extends' => 1];
+
+
+    /**
      * Constructor
      * @param null|Translate $translate
      */
-    public function __construct(Translate $translate = null) {
+    public function __construct(Translate $translate = null, array $sections = []) {
+
         $this -> translate = $translate ?? new Translate();
+        $this -> sections = $sections;
     }
 
 
@@ -403,11 +420,11 @@ class Parser {
      */
     public function partial(string $filePath, bool $render = false) {
 
-        $parser = new self($this -> translate);
+        $parser = new self($this -> translate, $this -> sections);
         $parser -> setCacheDir($this -> cacheDirectory -> getPath());
         $parser -> setTemplateDir($this -> templateDirectory -> getPath());
         $parser -> setFile($filePath);
-        $parser -> enableCache($parser -> isCachedEnabled());
+        $parser -> enableCache($this -> isCachedEnabled());
 
         if(null !== $this -> skip) {
             $parser -> setSkip($this -> skip);
@@ -508,6 +525,56 @@ class Parser {
 
 
     /**
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     * @param Node $node
+     * @throws RuntimeException
+     */
+    private function extending(Node $node): void {
+
+        $tag = $node -> getTag();
+
+        if('s-section' !== $tag -> getName()) {
+            throw new RuntimeException(sprintf('Node should be a "s-section" node, "%s" found in "%s".', $tag -> getName(), $this -> file));
+        }
+
+        $nameAttr = $tag -> getAttribute('name');
+
+        if(null === $nameAttr) {
+            throw new RuntimeException(sprintf('Node must have a "name" attribute in "%s".', $this -> file));
+        }
+
+        $sectionName = $nameAttr -> getValue();
+
+        $this -> sections[$sectionName] ??= [];
+        $this -> sections[$sectionName][] = [
+
+            'content' => $node -> getContent(),
+            'append'  => $tag -> getAttribute('append'),
+            'replace' => $tag -> getAttribute('replace'),
+            'prepend' => $tag -> getAttribute('prepend')
+        ];
+    }
+
+
+    /**
      * Formats all the nodes to XML/Html and returns an array with the results
      * @param DomElementAbstract[] $nodes
      * @param array $output
@@ -520,6 +587,13 @@ class Parser {
 
             //Parses element nodes
             if($node instanceof Node) {
+
+                if($parent = $node -> getParent()) {
+
+                    if('s-extends' === $parent -> getTag() -> getName() && 's-section' !== $node -> getTag() -> getName()) {
+                        throw new RuntimeException(sprintf('Only s-section tags and comments are allowed wihtin a s-sextends tag "template" attribute for s-extends tag found in "%s"', $this -> file));
+                    }
+                }
 
                 //Format all attributes
                 $attributes = new AttributeCollection($node, null !== $this -> translate -> getNode());
@@ -542,7 +616,7 @@ class Parser {
                         $name  = $attribute -> getKey();
                         $value = $attribute -> getValue();
 
-                        //Format the value that function calls will be converted
+                        //Format the value that so that function calls will be converted if needed
                         $value = $value ? (new Functions($value)) -> parse() : $value;
 
                         //Check if the node needs to be translated
@@ -576,6 +650,11 @@ class Parser {
 
                         //Check for static partials
                         elseif($name === 's-partial') {
+                            continue;
+                        }
+
+                        //Check for yield (extending)
+                        elseif($name === 's-yield') {
                             continue;
                         }
 
@@ -640,15 +719,19 @@ class Parser {
                         }
                     }
 
-                    //Render the tag, but skip this process if the special s-tag is summoned
-                    if('s-tag' !== $tag -> getName()) {
+                    if('s-section' === $tag -> getName()) {
+                        $this -> extending($node);
+                    }
+
+                    //Render the tag, but skip this process if the special hidden tags are summoned
+                    if(false === $this -> isTagHidden($tag -> getName())) {
 
                         $code = sprintf('<%s%s%s%s>', ($tag -> isLanguageNode() ? '?' : null), $tag -> getName(), implode('', $attr), (true === $tag -> isSelfClosingNode() ? ' /' : ''));
 
                         if($node === $this -> translate -> getNode()) {
                             $output[] = $code;
                         }
-                        else{
+                        else {
                             $this -> appendOutput($code, $output, false);
                         }
                     }
@@ -663,7 +746,10 @@ class Parser {
 
                 //Parse and append the child nodes to the output if the current node has children
                 if(true === $node -> hasChildren()) {
-                    $this -> output($node -> getChildren(), $output);
+
+                    if(null === $node -> getParent() || 's-section' !== $tag -> getName()) {
+                        $this -> output($node -> getChildren(), $output);
+                    }
                 }
 
                 //All the translation data are gathered so close the translation node and translate it contents
@@ -673,8 +759,18 @@ class Parser {
                     $this -> translate -> reset();
                 }
 
+                //Append the output of all section names equals too the yield attribute
+                if($yield = $tag -> getAttribute('s-yield')) {
+
+                    $sections = $this -> sections[$yield -> getValue()] ?? [];
+
+                    foreach($sections as $section) {
+                        $this -> appendOutput($this -> parse($section['content']), $output, false);
+                    }
+                }
+
                 //Close the tag manually if the tag should be closed
-                if('s-tag' !== $tag -> getName() && true === $tag -> shouldHaveClosingTag()) {
+                if(false === $this -> isTagHidden($tag -> getName()) && true === $tag -> shouldHaveClosingTag()) {
 
                     $code = sprintf('</%s>', $tag -> getName());
                     $this -> appendOutput($code, $output, false);
@@ -716,11 +812,29 @@ class Parser {
                     }
                 }
 
+                //Process extends
+                if('s-extends' === $tag -> getName()) {
+
+                    $templateAttr = $attributes -> get('template');
+
+                    if(null === $templateAttr) {
+                        throw new RuntimeException(sprintf('Missing "template" attribute for s-extends tag found in "%s"', $this -> file));
+                    }
+
+                    $code = $this -> partial($templateAttr -> getValue());
+                    $this -> appendOutput($code ?? '', $output, false);
+                }
+
                 continue;
             }
 
             //Parses text nodes
             if($node instanceof Text || $node instanceof Comment) {
+
+                //Should not render other nodes than s-sections if the parent node is a s-extends node
+                if(null !== $node -> getParent() && 's-extends' === $node -> getParent() -> getTag() -> getName()) {
+                    continue;
+                }
 
                 //Skip HTML comments if needed
                 if($node instanceof Comment && true === $this -> skipComments) {
@@ -757,6 +871,16 @@ class Parser {
         }
 
         return $output;
+    }
+
+
+    /**
+     * Returns if a given tag should be not be added to the output
+     * @param string $tagName
+     * @return bool
+     */
+    private function isTagHidden(string $tagName) {
+        return true === isset($this -> hiddenTags[$tagName]);
     }
 
 

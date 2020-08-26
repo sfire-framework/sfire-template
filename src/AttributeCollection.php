@@ -155,7 +155,7 @@ class AttributeCollection {
             if(true === isset($this -> skip[$attribute -> getName()])) {
                 continue;
             }
-            
+
             $attr      = new NodeAttribute();
             $enclosure = $attribute -> getEnclosure();
             $value     = $attribute -> getValue();
@@ -246,7 +246,7 @@ class AttributeCollection {
         }
 
         //Make sure the attribute are in the correct order for execution
-        usort($this -> attributes, function(NodeAttribute $a, NodeAttribute $b) {
+        uasort($this -> attributes, function(NodeAttribute $a, NodeAttribute $b) {
 
             $sort = ['s-if' => 0, 's-elseif' => 1, 's-else' => 2, 's-for' => 3];
             return ($sort[$a -> getName()] ?? 4) > ($sort[$b -> getName()] ?? 4);
