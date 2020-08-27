@@ -200,7 +200,7 @@ This way the variable won't be escaped, so be careful using this option.
 You can also use the variables for other template functions like `if` statements:
 
 ```html
-<div v-if="$foo === 'bar'">
+<div s-if="$foo === 'bar'">
     foo equals bar
 </div>
 ```
@@ -432,22 +432,22 @@ The `s-elseif`, as the name suggests, serves as an “else if block” for `s-if
 <input type="text" name="username" s-bind:value="$_POST['username']">
 
 <!-- Bind a variable title -->
-<a href="/" v-bind:title="$title">Click</a>
+<a href="/" s-bind:title="$title">Click</a>
 
 <!-- Combine variable with static string -->
-<img v-bind:src="$path . '/logo.png'">
+<img s-bind:src="$path . '/logo.png'">
 ```
 
 
 
 #### Class and Style Bindings
 
-A common need for data binding is manipulating an element’s class list and its inline styles. Since they are both attributes, we can use `s-bind` to handle them: we only need to calculate a final string with our expressions. However, meddling with string concatenation is annoying and error-prone. For this reason, sFire Template provides special enhancements when `s-bind` is used with class and style. In addition to strings, the expressions can also evaluate to arrays.
+A common need for data binding is manipulating an element's class list and its inline styles. Since they are both attributes, we can use `s-bind` to handle them: we only need to calculate a final string with our expressions. However, meddling with string concatenation is annoying and error-prone. For this reason, sFire Template provides special enhancements when `s-bind` is used with class and style. In addition to strings, the expressions can also evaluate to arrays.
 
 ##### Array Syntax
-We can pass an object to v-bind:class to dynamically toggle classes:
+We can pass an object to s-bind:class to dynamically toggle classes:
 ```html
-<div v-bind:class="['active' => true]"></div>
+<div s-bind:class="['active' => true]"></div>
 ```
 The above syntax means the presence of the `active` class will be determined by the truthiness of the data property which in this case is `true`. This can also be a variable, function or method.
 
@@ -455,7 +455,7 @@ You can have multiple classes toggled by having more fields in the array. In add
 ```html
 <div
   class="static"
-  v-bind:class="['active' => true, 'text-danger' => false]"
+  s-bind:class="['active' => true, 'text-danger' => false]"
 ></div>
 ```
 It will render:

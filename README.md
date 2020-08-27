@@ -1,9 +1,13 @@
+## sFire Template
+sFire Template is a PHP Template parser based on VueJS template syntax. All sFire templates are valid HTML or XML that can be parsed by spec-compliant browsers and HTML/XML parsers. sFire Template helps you creates logic in HTML/XML files. Create `if` statements, `for` loops, include other HTML/XML files and much more. Translation is also within the package for easy creating multi-language sites/apps.
+
+
 ### System Requirements
 Requires PHP 7.4 or later; we recommend using the latest PHP version whenever possible.
 
 
 ### Current version
-The current version is 1.0.4
+The current version is 1.0.5
 
 
 ### Installation

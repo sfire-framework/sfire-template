@@ -407,7 +407,7 @@ class Parser {
         $parser -> setCacheDir($this -> cacheDirectory -> getPath());
         $parser -> setTemplateDir($this -> templateDirectory -> getPath());
         $parser -> setFile($filePath);
-        $parser -> enableCache($parser -> isCachedEnabled());
+        $parser -> enableCache($this -> isCachedEnabled());
 
         if(null !== $this -> skip) {
             $parser -> setSkip($this -> skip);
